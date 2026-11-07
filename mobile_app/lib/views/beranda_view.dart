@@ -1,10 +1,38 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../services/user_session.dart';
 import '../theme/colors.dart';
+import 'tentang_view.dart';
 
-class BerandaView extends StatelessWidget {
+class BerandaView extends StatefulWidget {
   final Function(int)? onNavigateTab;
   const BerandaView({super.key, this.onNavigateTab});
+
+  @override
+  State<BerandaView> createState() => _BerandaViewState();
+}
+
+class _BerandaViewState extends State<BerandaView> {
+  String get _userName => UserSession.instance.name;
+  String get _userInitials => UserSession.instance.initials;
+
+  @override
+  void initState() {
+    super.initState();
+    UserSession.instance.addListener(_onSessionChanged);
+  }
+
+  @override
+  void dispose() {
+    UserSession.instance.removeListener(_onSessionChanged);
+    super.dispose();
+  }
+
+  void _onSessionChanged() {
+    if (mounted) {
+      setState(() {});
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -42,30 +70,44 @@ class BerandaView extends StatelessWidget {
               ),
               Row(
                 children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: AppColors.tagBg,
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: AppColors.border),
-                    ),
-                    child: Row(
-                      children: [
-                        const CircleAvatar(
-                          radius: 10,
-                          backgroundColor: AppColors.maroon,
-                          child: Text('RA', style: TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold)),
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          'Ratna Anindita',
-                          style: GoogleFonts.plusJakartaSans(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.textMain,
+                  GestureDetector(
+                    onTap: () {
+                      if (widget.onNavigateTab != null) {
+                        widget.onNavigateTab!(4); // Arahkan ke tab Profil
+                      }
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: AppColors.tagBg,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: AppColors.border),
+                      ),
+                      child: Row(
+                        children: [
+                          CircleAvatar(
+                            radius: 10,
+                            backgroundColor: AppColors.maroon,
+                            child: Text(
+                              _userInitials,
+                              style: const TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold),
+                            ),
                           ),
-                        ),
-                      ],
+                          const SizedBox(width: 6),
+                          ConstrainedBox(
+                            constraints: const BoxConstraints(maxWidth: 120),
+                            child: Text(
+                              _userName,
+                              overflow: TextOverflow.ellipsis,
+                              style: GoogleFonts.plusJakartaSans(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.textMain,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                   const SizedBox(width: 6),
@@ -83,16 +125,10 @@ class BerandaView extends StatelessWidget {
           ),
           const SizedBox(height: 16),
 
-          // Banner Hero Utama (Dengan Gradient & Shadow Lebih Mewah)
+          // Banner Hero Utama
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFF521513), Color(0xFF80221E)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
@@ -102,61 +138,103 @@ class BerandaView extends StatelessWidget {
                 ),
               ],
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Text(
-                    'CAGAR BUDAYA & LITERASI',
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 9,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 0.8,
-                      color: Colors.white,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(16),
+              child: Stack(
+                children: [
+                  Positioned.fill(
+                    child: Image.asset(
+                      'assets/images/rbr_frontt.jpg',
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) => Container(
+                        decoration: const BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [Color(0xFF521513), Color(0xFF80221E)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                        ),
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  'Rumah Budaya Ratna',
-                  style: GoogleFonts.lora(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  'Ruang temu seni, pemikiran, dan rasa di tengah kehangatan tradisi Jawa.',
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 11,
-                    height: 1.4,
-                    color: Colors.white.withValues(alpha: 0.88),
-                  ),
-                ),
-                const SizedBox(height: 14),
-                ElevatedButton(
-                  onPressed: () => onNavigateTab?.call(3),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.gold,
-                    foregroundColor: Colors.white,
-                    elevation: 2,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
+                  Positioned.fill(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Colors.black.withValues(alpha: 0.45),
+                            const Color(0xFF3B0D0C).withValues(alpha: 0.85),
+                          ],
+                        ),
+                      ),
                     ),
                   ),
-                  child: Text(
-                    'Pelajari Selengkapnya',
-                    style: GoogleFonts.plusJakartaSans(fontSize: 11, fontWeight: FontWeight.bold),
+                  Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            'CAGAR BUDAYA & LITERASI',
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 9,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 0.8,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Text(
+                          'Rumah Budaya Ratna',
+                          style: GoogleFonts.lora(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          'Ruang temu seni, pemikiran, dan rasa di tengah kehangatan tradisi Jawa.',
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 11,
+                            height: 1.4,
+                            color: Colors.white.withValues(alpha: 0.88),
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+                        ElevatedButton(
+                          onPressed: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => const TentangView()),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.gold,
+                            foregroundColor: Colors.white,
+                            elevation: 2,
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          child: Text(
+                            'Pelajari Selengkapnya',
+                            style: GoogleFonts.plusJakartaSans(fontSize: 11, fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
           const SizedBox(height: 20),
@@ -175,10 +253,10 @@ class BerandaView extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _buildQuickAccessItem(Icons.coffee_outlined, 'Pesan Kopi', () => onNavigateTab?.call(1)),
-              _buildQuickAccessItem(Icons.menu_book_outlined, 'Katalog Buku', () => onNavigateTab?.call(2)),
-              _buildQuickAccessItem(Icons.calendar_month_outlined, 'Event', () => onNavigateTab?.call(3)),
-              _buildQuickAccessItem(Icons.person_outline, 'Profil', () => onNavigateTab?.call(4)),
+              _buildQuickAccessItem(Icons.coffee_outlined, 'Pesan Kopi', () => widget.onNavigateTab?.call(1)),
+              _buildQuickAccessItem(Icons.menu_book_outlined, 'Katalog Buku', () => widget.onNavigateTab?.call(2)),
+              _buildQuickAccessItem(Icons.calendar_month_outlined, 'Event', () => widget.onNavigateTab?.call(3)),
+              _buildQuickAccessItem(Icons.person_outline, 'Profil', () => widget.onNavigateTab?.call(4)),
             ],
           ),
           const SizedBox(height: 24),
@@ -192,7 +270,7 @@ class BerandaView extends StatelessWidget {
                 style: GoogleFonts.lora(fontSize: 17, fontWeight: FontWeight.bold, color: AppColors.textMain),
               ),
               GestureDetector(
-                onTap: () => onNavigateTab?.call(2),
+                onTap: () => widget.onNavigateTab?.call(2),
                 child: Text(
                   'Lihat Semua >',
                   style: GoogleFonts.plusJakartaSans(fontSize: 11, color: AppColors.maroon, fontWeight: FontWeight.bold),
@@ -206,11 +284,11 @@ class BerandaView extends StatelessWidget {
             physics: const BouncingScrollPhysics(),
             child: Row(
               children: [
-                _buildBookCard('Dokumen Jibril', 'Eko Triono', 'Rak 2A', const Color(0xFF1F2421)),
+                _buildBookCard('Dokumen Jibril', 'Eko Triono', 'Rak 2A', const Color(0xFF1F2421), image: 'assets/images/dokumen_jibril.jpg'),
                 const SizedBox(width: 12),
-                _buildBookCard('Seni Batik Jawa', 'Nian S. L.', 'Rak 1B', const Color(0xFF3B5249)),
+                _buildBookCard('Anjing-Anjing Menyerbu Lek Zul', 'C.R. Tanujaya', 'Rak 3B', const Color(0xFF1E3A5F), image: 'assets/images/anjing_anjing_menyerbu_lek_zul.jpg'),
                 const SizedBox(width: 12),
-                _buildBookCard('Laki-Laki Peri', 'Eka Kurniawan', 'Rak 2C', const Color(0xFF513B41)),
+                _buildBookCard('Laki-Laki Peri', 'Eka Kurniawan', 'Rak 2C', const Color(0xFF513B41), image: 'assets/images/laki_laki_yang_kawin_dengan_peri.jpg'),
               ],
             ),
           ),
@@ -224,9 +302,12 @@ class BerandaView extends StatelessWidget {
                 'Agenda Mendatang',
                 style: GoogleFonts.lora(fontSize: 17, fontWeight: FontWeight.bold, color: AppColors.textMain),
               ),
-              Text(
-                'Kalender >',
-                style: GoogleFonts.plusJakartaSans(fontSize: 11, color: AppColors.maroon, fontWeight: FontWeight.bold),
+              GestureDetector(
+                onTap: () => widget.onNavigateTab?.call(3),
+                child: Text(
+                  'Kalender >',
+                  style: GoogleFonts.plusJakartaSans(fontSize: 11, color: AppColors.maroon, fontWeight: FontWeight.bold),
+                ),
               ),
             ],
           ),
@@ -266,7 +347,7 @@ class BerandaView extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('19.00 WIB • Pendopo Utama', style: GoogleFonts.plusJakartaSans(fontSize: 10, color: AppColors.textMuted)),
+                      Text('19.00 WIB - Pendopo Utama', style: GoogleFonts.plusJakartaSans(fontSize: 10, color: AppColors.textMuted)),
                       const SizedBox(height: 2),
                       Text(
                         'Malam Akustik & Puisi Nusantara',
@@ -276,7 +357,7 @@ class BerandaView extends StatelessWidget {
                   ),
                 ),
                 ElevatedButton(
-                  onPressed: () => onNavigateTab?.call(3),
+                  onPressed: () => widget.onNavigateTab?.call(3),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.maroon,
                     foregroundColor: Colors.white,
@@ -301,7 +382,7 @@ class BerandaView extends StatelessWidget {
               border: Border.all(color: AppColors.gold.withValues(alpha: 0.3)),
             ),
             child: Text(
-              '"Membaca adalah merawat ingatan, berbudaya adalah merawat martabat."',
+              'Membaca adalah merawat ingatan, berbudaya adalah merawat martabat.',
               textAlign: TextAlign.center,
               style: GoogleFonts.lora(
                 fontSize: 11,
@@ -347,7 +428,19 @@ class BerandaView extends StatelessWidget {
     );
   }
 
-  Widget _buildBookCard(String title, String author, String shelf, Color coverColor) {
+  String _getBookCoverImage(String title, [String? explicitImage]) {
+    if (explicitImage != null && explicitImage.trim().isNotEmpty) {
+      return explicitImage.trim();
+    }
+    final slug = title
+        .toLowerCase()
+        .replaceAll(RegExp(r'[^a-z0-9]+'), '_')
+        .replaceAll(RegExp(r'^_+|_+$'), '');
+    return 'assets/images/$slug.jpg';
+  }
+
+  Widget _buildBookCard(String title, String author, String shelf, Color coverColor, {String? image}) {
+    final imagePath = _getBookCoverImage(title, image);
     return Container(
       width: 125,
       decoration: BoxDecoration(
@@ -365,40 +458,67 @@ class BerandaView extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
+          SizedBox(
             height: 135,
             width: double.infinity,
-            decoration: BoxDecoration(
-              color: coverColor,
+            child: ClipRRect(
               borderRadius: const BorderRadius.vertical(top: Radius.circular(11)),
-            ),
-            padding: const EdgeInsets.all(8),
-            child: Stack(
-              children: [
-                Positioned(
-                  top: 0,
-                  right: 0,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.6),
-                      borderRadius: BorderRadius.circular(4),
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  (imagePath.startsWith('http://') || imagePath.startsWith('https://'))
+                      ? Image.network(
+                          imagePath,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) => Container(
+                            color: coverColor,
+                            padding: const EdgeInsets.all(8),
+                            child: Center(
+                              child: Text(
+                                title,
+                                textAlign: TextAlign.center,
+                                style: GoogleFonts.lora(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white.withValues(alpha: 0.9),
+                                ),
+                              ),
+                            ),
+                          ),
+                        )
+                      : Image.asset(
+                          imagePath,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) => Container(
+                            color: coverColor,
+                            padding: const EdgeInsets.all(8),
+                            child: Center(
+                              child: Text(
+                                title,
+                                textAlign: TextAlign.center,
+                                style: GoogleFonts.lora(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white.withValues(alpha: 0.9),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                  Positioned(
+                    top: 6,
+                    right: 6,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.6),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(shelf, style: const TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold)),
                     ),
-                    child: Text(shelf, style: const TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold)),
                   ),
-                ),
-                Center(
-                  child: Text(
-                    title,
-                    textAlign: TextAlign.center,
-                    style: GoogleFonts.lora(
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white.withValues(alpha: 0.9),
-                    ),
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
           Padding(

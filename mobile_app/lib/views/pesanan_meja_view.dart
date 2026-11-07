@@ -1,11 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../models/cart_item_model.dart';
 import '../theme/colors.dart';
+import '../widgets/mobile_frame.dart';
 import '../widgets/payment_option_card.dart';
 import '../widgets/price_summary_card.dart';
+import 'package:mobile_app/views/qris_payment_view.dart';
+import 'package:mobile_app/views/va_payment_view.dart';
+import 'package:mobile_app/views/struk_pembayaran_view.dart';
+import '../services/payment_service.dart';
 
 class PesananMejaView extends StatefulWidget {
-  const PesananMejaView({super.key});
+  final List<CartItem> cartItems;
+  final String tableName;
+  final String orderNumber;
+
+  const PesananMejaView({
+    super.key,
+    this.cartItems = const [],
+    this.tableName = 'Meja No. 04',
+    this.orderNumber = '#ORD-9042',
+  });
 
   @override
   State<PesananMejaView> createState() => _PesananMejaViewState();
@@ -14,75 +29,114 @@ class PesananMejaView extends StatefulWidget {
 class _PesananMejaViewState extends State<PesananMejaView> {
   int _selectedPaymentMethod = 0; // 0: QRIS, 1: Tunai Kasir, 2: Transfer Bank
 
+  List<CartItem> get _effectiveCartItems {
+    if (widget.cartItems.isNotEmpty) {
+      return widget.cartItems;
+    }
+    return const [
+      CartItem(
+        name: 'Kopi Susu Creamy',
+        price: 18000,
+        quantity: 1,
+        note: 'Less Sugar • Less Ice',
+      ),
+      CartItem(
+        name: 'Americano Signature',
+        price: 17000,
+        quantity: 1,
+        note: 'Single Origin • Hot',
+      ),
+    ];
+  }
+
+  int get _subtotal {
+    return _effectiveCartItems.fold(0, (sum, item) => sum + item.totalPrice);
+  }
+
+  int get _totalItemsCount {
+    return _effectiveCartItems.fold(0, (sum, item) => sum + item.quantity);
+  }
+
+  int get _taxFee => 0;
+  int get _discount => 0;
+  int get _totalPrice => _subtotal + _taxFee - _discount;
+
+  String _formatRupiah(int price) {
+    return 'Rp ${price.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')}';
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.bgCanvas,
-      appBar: AppBar(
+    return MobileFrame(
+      child: Scaffold(
         backgroundColor: AppColors.bgCanvas,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded, color: AppColors.darkText),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: Text(
-          'Pesanan Meja',
-          style: GoogleFonts.lora(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: AppColors.darkText,
+        appBar: AppBar(
+          backgroundColor: AppColors.bgCanvas,
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_rounded, color: AppColors.darkText),
+            onPressed: () => Navigator.pop(context),
           ),
-        ),
-        centerTitle: false,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.share_outlined, color: AppColors.darkText, size: 20),
-            onPressed: () {},
-          ),
-          IconButton(
-            icon: const Icon(Icons.person_outline_rounded, color: AppColors.darkText, size: 20),
-            onPressed: () {},
-          ),
-        ],
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Banner Pendopo
-            _buildBannerPendopo(),
-            const SizedBox(height: 16),
-
-            // Card Detail Outlet
-            _buildOutletCard(),
-            const SizedBox(height: 16),
-
-            // Ringkasan Menu
-            _buildMenuSummary(),
-            const SizedBox(height: 16),
-
-            // Kupon & Promo
-            _buildPromoSection(),
-            const SizedBox(height: 16),
-
-            // Rincian Pembayaran (menggunakan Widget PriceSummaryCard)
-            const PriceSummaryCard(
-              subtotal: 'Rp 35.000',
-              taxFee: 'Rp 0',
-              discount: '-Rp 0',
-              totalPrice: 'Rp 35.000',
+          title: Text(
+            'Pesanan Meja',
+            style: GoogleFonts.lora(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: AppColors.darkText,
             ),
-            const SizedBox(height: 16),
-
-            // Metode Pembayaran (menggunakan Widget PaymentOptionCard)
-            _buildPaymentSection(),
-            const SizedBox(height: 24),
-
-            // Tombol Konfirmasi Bayar
-            _buildConfirmButton(),
-            const SizedBox(height: 20),
+          ),
+          centerTitle: false,
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.share_outlined, color: AppColors.darkText, size: 20),
+              onPressed: () {},
+            ),
+            IconButton(
+              icon: const Icon(Icons.person_outline_rounded, color: AppColors.darkText, size: 20),
+              onPressed: () {},
+            ),
           ],
+        ),
+        body: SingleChildScrollView(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Banner Pendopo
+              _buildBannerPendopo(),
+              const SizedBox(height: 16),
+
+              // Card Detail Outlet
+              _buildOutletCard(),
+              const SizedBox(height: 16),
+
+              // Ringkasan Menu
+              _buildMenuSummary(),
+              const SizedBox(height: 16),
+
+              // Kupon & Promo
+              _buildPromoSection(),
+              const SizedBox(height: 16),
+
+              // Rincian Pembayaran (menggunakan Widget PriceSummaryCard)
+              PriceSummaryCard(
+                subtotalLabel: 'Subtotal ($_totalItemsCount Item)',
+                subtotal: _formatRupiah(_subtotal),
+                taxFee: _formatRupiah(_taxFee),
+                discount: _discount > 0 ? '-${_formatRupiah(_discount)}' : 'Rp 0',
+                totalPrice: _formatRupiah(_totalPrice),
+              ),
+              const SizedBox(height: 16),
+
+              // Metode Pembayaran (menggunakan Widget PaymentOptionCard)
+              _buildPaymentSection(),
+              const SizedBox(height: 24),
+
+              // Tombol Konfirmasi Bayar
+              _buildConfirmButton(),
+              const SizedBox(height: 20),
+            ],
+          ),
         ),
       ),
     );
@@ -164,7 +218,7 @@ class _PesananMejaViewState extends State<PesananMejaView> {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
-                  '#ORD-9042',
+                  widget.orderNumber,
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 10,
                     fontWeight: FontWeight.bold,
@@ -193,7 +247,7 @@ class _PesananMejaViewState extends State<PesananMejaView> {
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
-                  'Meja No. 04',
+                  widget.tableName,
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 11,
                     fontWeight: FontWeight.bold,
@@ -217,6 +271,7 @@ class _PesananMejaViewState extends State<PesananMejaView> {
   }
 
   Widget _buildMenuSummary() {
+    final items = _effectiveCartItems;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -248,7 +303,7 @@ class _PesananMejaViewState extends State<PesananMejaView> {
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
-                      '2 Menu',
+                      '${items.length} Menu',
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: 10,
                         fontWeight: FontWeight.w600,
@@ -258,20 +313,42 @@ class _PesananMejaViewState extends State<PesananMejaView> {
                   ),
                 ],
               ),
-              Text(
-                'Ubah',
-                style: GoogleFonts.plusJakartaSans(
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.maroon,
+              InkWell(
+                onTap: () => Navigator.pop(context),
+                borderRadius: BorderRadius.circular(4),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                  child: Text(
+                    'Ubah',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.maroon,
+                    ),
+                  ),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 12),
-          _buildOrderItem('1x Kopi Susu Creamy', 'Rp 18.000', 'Less Sugar • Less Ice'),
-          const Divider(height: 20, color: AppColors.lightBorder),
-          _buildOrderItem('1x Americano Signature', 'Rp 17.000', 'Single Origin • Hot'),
+          ListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: items.length,
+            itemBuilder: (context, index) {
+              final item = items[index];
+              return Column(
+                children: [
+                  if (index > 0) const Divider(height: 20, color: AppColors.lightBorder),
+                  _buildOrderItem(
+                    '${item.quantity}x ${item.name}',
+                    _formatRupiah(item.totalPrice),
+                    item.note.isNotEmpty ? item.note : (item.category ?? 'Pesanan Kedai'),
+                  ),
+                ],
+              );
+            },
+          ),
         ],
       ),
     );
@@ -282,27 +359,30 @@ class _PesananMejaViewState extends State<PesananMejaView> {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              name,
-              style: GoogleFonts.plusJakartaSans(
-                fontSize: 13,
-                fontWeight: FontWeight.bold,
-                color: AppColors.darkText,
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                name,
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 13,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.darkText,
+                ),
               ),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              note,
-              style: GoogleFonts.plusJakartaSans(
-                fontSize: 11,
-                color: AppColors.greyText,
+              const SizedBox(height: 2),
+              Text(
+                note,
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 11,
+                  color: AppColors.greyText,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
+        const SizedBox(width: 12),
         Text(
           price,
           style: GoogleFonts.plusJakartaSans(
@@ -473,9 +553,99 @@ class _PesananMejaViewState extends State<PesananMejaView> {
       width: double.infinity,
       height: 52,
       child: ElevatedButton(
-        onPressed: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Pesanan berhasil dibuat!')),
+        onPressed: () async {
+          final items = _effectiveCartItems;
+          final total = _totalPrice;
+          final orderNo = widget.orderNumber;
+          final table = widget.tableName;
+
+          final strukView = StrukPembayaranView(
+            orderNumber: orderNo,
+            tableName: '$table (Dine-In)',
+            cartItems: items,
+            subtotal: _subtotal,
+            totalPrice: total,
+            paymentMethod: _selectedPaymentMethod == 0
+                ? 'QRIS (INSTAN)'
+                : (_selectedPaymentMethod == 2 ? 'Transfer Bank (VA)' : 'Tunai Kasir'),
+          );
+
+          if (_selectedPaymentMethod == 0 || _selectedPaymentMethod == 2) {
+            final isQris = _selectedPaymentMethod == 0;
+            final cleanOrder = 'RBR-KEDAI-${DateTime.now().millisecondsSinceEpoch}';
+
+            showDialog(
+              context: context,
+              barrierDismissible: false,
+              builder: (_) => const Center(
+                child: CircularProgressIndicator(color: AppColors.maroon),
+              ),
+            );
+
+            final chargeResult = await PaymentService.createCharge(
+              orderId: cleanOrder,
+              grossAmount: total,
+              customerName: 'Pelanggan $table',
+              paymentType: isQris ? 'qris' : 'bank_transfer',
+              bank: 'bca',
+              orderType: 'kedai',
+              items: items.map((i) => {
+                'id': i.name,
+                'name': i.name,
+                'price': i.price,
+                'quantity': i.quantity,
+              }).toList(),
+            );
+
+            if (!mounted) return;
+            Navigator.pop(context); // Tutup loading dialog
+
+            final finalOrderId = chargeResult?['order_id'] ?? cleanOrder;
+
+            if (isQris) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => QrisPaymentView(
+                    title: 'Pesanan Meja',
+                    orderNumber: finalOrderId,
+                    badgeText: '$table • Dine-in',
+                    totalAmount: _formatRupiah(total),
+                    rawAmount: total,
+                    qrUrl: chargeResult?['qr_url'],
+                    qrString: chargeResult?['qr_string'],
+                    buttonLabel: 'CEK STATUS PEMBAYARAN',
+                    nextScreen: strukView,
+                  ),
+                ),
+              );
+            } else {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => VaPaymentView(
+                    title: 'Pesanan Meja',
+                    orderNumber: finalOrderId,
+                    badgeText: table,
+                    totalAmount: _formatRupiah(total),
+                    rawAmount: total,
+                    vaNumber: chargeResult?['va_number'] ?? '5213 1845 9403 1716',
+                    bankName: '${(chargeResult?['bank'] ?? 'BCA').toUpperCase()} Virtual Account',
+                    buttonLabel: 'CEK STATUS PEMBAYARAN',
+                    nextScreen: strukView,
+                  ),
+                ),
+              );
+            }
+            return;
+          }
+
+          if (!mounted) return;
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => strukView,
+            ),
           );
         },
         style: ElevatedButton.styleFrom(
