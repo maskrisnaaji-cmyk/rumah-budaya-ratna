@@ -13,7 +13,6 @@ import '../theme/colors.dart';
 import 'main_screen.dart';
 import 'register_view.dart';
 import 'forgot_password_view.dart';
-import 'forgot_password_view.dart';
 
 extension GoogleSignInCompat on GoogleSignIn {
   /// Metode signIn() untuk platform Web dan kompatibilitas

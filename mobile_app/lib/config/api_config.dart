@@ -34,6 +34,8 @@ class ApiConfig {
   static String get booksUrl => '$baseUrl/books';
   static String get registerUrl => '$baseUrl/auth/register';
   static String get loginUrl => '$baseUrl/auth/login';
+  static String get googleLoginUrl => '$baseUrl/auth/google-login';
+  static String get forgotPasswordUrl => '$baseUrl/auth/forgot-password';
   static String get aiChatUrl => '$baseUrl/ai/chat';
   static String get paymentChargeUrl => '$baseUrl/payment/charge';
   static String get paymentNotificationUrl => '$baseUrl/payment/notification';
